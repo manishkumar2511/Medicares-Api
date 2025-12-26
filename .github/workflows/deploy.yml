@@ -1,4 +1,4 @@
-name: Build & Deploy to MonsterASP
+name: Build & Deploy to MonsterASP via FTP Zip
 
 on:
   push:
@@ -10,47 +10,34 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout source
-        uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v3
         with:
-          dotnet-version: '8.0.x'
+          dotnet-version: 8.0.x
 
-      - name: Detect API project
-        id: find_api
-        run: |
-          proj=$(find . -name "*.csproj" | while read f; do
-            dir=$(dirname "$f")
-            if [ -f "$dir/Program.cs" ] || [ -f "$dir/Startup.cs" ]; then
-              echo "$f"
-              break
-            fi
-          done)
-          if [ -z "$proj" ]; then
-            echo "No API project found!"
-            exit 1
-          fi
-          echo "API project detected: $proj"
-          echo "api_project=$proj" >> $GITHUB_OUTPUT
+      - name: Restore dependencies
+        run: dotnet restore ./src/Api/Medicares.Api/Medicares.Api.csproj
 
-      - name: Restore
-        run: dotnet restore ${{ steps.find_api.outputs.api_project }}
+      - name: Build project
+        run: dotnet build ./src/Api/Medicares.Api/Medicares.Api.csproj --configuration Release --no-restore
 
-      - name: Build
-        run: dotnet build ${{ steps.find_api.outputs.api_project }} -c Release --no-restore
+      - name: Publish project
+        run: dotnet publish ./src/Api/Medicares.Api/Medicares.Api.csproj --configuration Release --output ./publish --no-build
 
-      - name: Publish
-        run: dotnet publish ${{ steps.find_api.outputs.api_project }} -c Release -o publish
+      - name: Create ZIP of published files
+        run: zip -r publish.zip ./publish
 
-      - name: Deploy via FTP
+      - name: Upload ZIP via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
-          server: ${{ secrets.FTP_SERVER }}
+          server: ${{ secrets.FTP_HOST }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
           port: 21
-          local-dir: publish/
+          protocol: ftp
+          local-dir: ./publish.zip
           server-dir: /wwwroot/
-          dangerous-clean-slate: false
+          log-level: info
