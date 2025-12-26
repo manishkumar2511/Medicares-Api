@@ -33,7 +33,7 @@ logs/
 *.log
 
 ## [Appsettings]
-appsettings.json
-appsettings.Development.json
+# appsettings.json
+# appsettings.Development.json
 # Note: Keep appsettings files if you want to push them, or ignore them for security and use environment variables.
 # For now, I'll keep them but usually they are ignored.
