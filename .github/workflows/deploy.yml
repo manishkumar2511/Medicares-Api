@@ -18,16 +18,16 @@ jobs:
         with:
           dotnet-version: '8.0.x'
 
-      - name: Restore dependencies
-        run: dotnet restore
+      - name: Restore
+        run: dotnet restore src/Api/Medicares.Api/Medicares.Api.csproj
 
       - name: Build
-        run: dotnet build --configuration Release --no-restore
+        run: dotnet build src/Api/Medicares.Api/Medicares.Api.csproj -c Release --no-restore
 
       - name: Publish
         run: dotnet publish src/Api/Medicares.Api/Medicares.Api.csproj -c Release -o publish
 
-      - name: Deploy to MonsterASP via FTP
+      - name: Deploy to MonsterASP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
           server: ${{ secrets.FTP_SERVER }}
