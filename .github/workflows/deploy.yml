@@ -28,10 +28,6 @@ jobs:
               break
             fi
           done)
-          if [ -z "$proj" ]; then
-            echo "No API project detected! Exiting."
-            exit 1
-          fi
           echo "API project detected: $proj"
           echo "api_project=$proj" >> $GITHUB_OUTPUT
 
@@ -44,22 +40,17 @@ jobs:
       - name: Publish
         run: dotnet publish ${{ steps.find_api.outputs.api_project }} -c Release -o publish
 
-      - name: Verify publish folder
+      - name: Create zip
         run: |
-          if [ ! -d "publish" ]; then
-            echo "Publish folder not found! Build/Publish might have failed."
-            exit 1
-          fi
+          cd publish
+          zip -r ../publish.zip .
 
-      - name: Deploy to MonsterASP via FTP
+      - name: Deploy zip via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
           server: ${{ secrets.FTP_SERVER }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
-          local-dir: publish/
+          local-dir: publish.zip
           server-dir: /wwwroot/
-          port: 21
-          passive: true
-          dry-run: false
           dangerous-clean-slate: false
