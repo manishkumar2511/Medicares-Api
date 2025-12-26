@@ -1,4 +1,4 @@
-name: Build & Deploy to MonsterASP via FTP Zip
+name: Build & Deploy to MonsterASP
 
 on:
   push:
@@ -8,9 +8,8 @@ on:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout repository
+      - name: Checkout code
         uses: actions/checkout@v3
 
       - name: Setup .NET
@@ -18,26 +17,30 @@ jobs:
         with:
           dotnet-version: 8.0.x
 
+      - name: Find .csproj dynamically
+        id: find_csproj
+        run: |
+          proj=$(find . -name "*.csproj" | head -n 1)
+          echo "Found project: $proj"
+          echo "csproj=$proj" >> $GITHUB_OUTPUT
+
       - name: Restore dependencies
-        run: dotnet restore ./src/Api/Medicares.Api/Medicares.Api.csproj
+        run: dotnet restore ${{ steps.find_csproj.outputs.csproj }}
 
       - name: Build project
-        run: dotnet build ./src/Api/Medicares.Api/Medicares.Api.csproj --configuration Release --no-restore
+        run: dotnet build ${{ steps.find_csproj.outputs.csproj }} --configuration Release --no-restore
 
       - name: Publish project
-        run: dotnet publish ./src/Api/Medicares.Api/Medicares.Api.csproj --configuration Release --output ./publish --no-build
+        run: dotnet publish ${{ steps.find_csproj.outputs.csproj }} -c Release -o published --no-build
 
-      - name: Create ZIP of published files
-        run: zip -r publish.zip ./publish
-
-      - name: Upload ZIP via FTP
+      - name: Deploy via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
           server: ${{ secrets.FTP_HOST }}
-          username: ${{ secrets.FTP_USERNAME }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          port: 21
+          username: ${{ secrets.FTP_USER }}
+          password: ${{ secrets.FTP_PASS }}
           protocol: ftp
-          local-dir: ./publish.zip
+          port: 21
+          local-dir: ./published/
           server-dir: /wwwroot/
-          log-level: info
+          log-level: verbose
