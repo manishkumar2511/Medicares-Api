@@ -19,13 +19,13 @@ jobs:
           dotnet-version: '8.0.x'
 
       - name: Restore
-        run: dotnet restore src/Api/Medicares.Api/Medicares.Api.csproj
+        run: dotnet restore Medicares/src/Api/Medicares.Api/Medicares.Api.csproj
 
       - name: Build
-        run: dotnet build src/Api/Medicares.Api/Medicares.Api.csproj -c Release --no-restore
+        run: dotnet build Medicares/src/Api/Medicares.Api/Medicares.Api.csproj -c Release --no-restore
 
       - name: Publish
-        run: dotnet publish src/Api/Medicares.Api/Medicares.Api.csproj -c Release -o publish
+        run: dotnet publish Medicares/src/Api/Medicares.Api/Medicares.Api.csproj -c Release -o publish
 
       - name: Deploy to MonsterASP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
