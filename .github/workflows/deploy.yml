@@ -43,6 +43,4 @@ jobs:
           port: 21
           local-dir: ./published/
           server-dir: /wwwroot/
-          local-dir: ./published/
-          server-dir: /wwwroot/
           log-level: verbose
