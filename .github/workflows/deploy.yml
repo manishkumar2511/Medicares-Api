@@ -10,17 +10,14 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ Checkout source
       - name: Checkout source
         uses: actions/checkout@v4
 
-      # 2️⃣ Setup .NET SDK
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '8.0.x'
 
-      # 3️⃣ Detect API project
       - name: Detect API project
         id: find_api
         run: |
@@ -38,19 +35,15 @@ jobs:
           echo "API project detected: $proj"
           echo "api_project=$proj" >> $GITHUB_OUTPUT
 
-      # 4️⃣ Restore dependencies
       - name: Restore
         run: dotnet restore ${{ steps.find_api.outputs.api_project }}
 
-      # 5️⃣ Build project
       - name: Build
         run: dotnet build ${{ steps.find_api.outputs.api_project }} -c Release --no-restore
 
-      # 6️⃣ Publish project
       - name: Publish
         run: dotnet publish ${{ steps.find_api.outputs.api_project }} -c Release -o publish
 
-      # 7️⃣ Verify publish folder exists
       - name: Verify publish folder
         run: |
           if [ ! -d "publish" ]; then
@@ -58,14 +51,17 @@ jobs:
             exit 1
           fi
 
-      # 8️⃣ Deploy via SFTP to MonsterASP
-      - name: Deploy via SFTP
+      - name: Zip publish folder
+        run: |
+          zip -r publish.zip publish/*
+
+      - name: Deploy zip via SFTP
         uses: appleboy/scp-action@v0.1.6
         with:
-          host: ${{ secrets.FTP_SERVER }}      # site48266.siteasp.net
-          username: ${{ secrets.FTP_USERNAME }} # site48266
-          password: ${{ secrets.FTP_PASSWORD }} # your FTP password
+          host: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
           port: 22
-          source: "publish/*"       # all files inside publish
-          target: "wwwroot/"        # MonsterASP home directory (no leading /)
-          rm: false                 # safer, avoids permission issues
+          source: "publish.zip"
+          target: "wwwroot/"
+          rm: false
