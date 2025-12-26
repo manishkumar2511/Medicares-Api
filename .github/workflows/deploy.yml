@@ -18,14 +18,22 @@ jobs:
         with:
           dotnet-version: '8.0.x'
 
+      - name: Find project file
+        id: find_proj
+        run: |
+          # Find the first .csproj file under the repo
+          proj_path=$(find . -name "*.csproj" | head -n 1)
+          echo "Project path found: $proj_path"
+          echo "proj_path=$proj_path" >> $GITHUB_OUTPUT
+
       - name: Restore
-        run: dotnet restore Medicares/src/Api/Medicares.Api/Medicares.Api.csproj
+        run: dotnet restore ${{ steps.find_proj.outputs.proj_path }}
 
       - name: Build
-        run: dotnet build Medicares/src/Api/Medicares.Api/Medicares.Api.csproj -c Release --no-restore
+        run: dotnet build ${{ steps.find_proj.outputs.proj_path }} -c Release --no-restore
 
       - name: Publish
-        run: dotnet publish Medicares/src/Api/Medicares.Api/Medicares.Api.csproj -c Release -o publish
+        run: dotnet publish ${{ steps.find_proj.outputs.proj_path }} -c Release -o publish
 
       - name: Deploy to MonsterASP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
