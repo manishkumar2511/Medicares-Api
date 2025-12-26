@@ -28,6 +28,10 @@ jobs:
               break
             fi
           done)
+          if [ -z "$proj" ]; then
+            echo "No API project found!"
+            exit 1
+          fi
           echo "API project detected: $proj"
           echo "api_project=$proj" >> $GITHUB_OUTPUT
 
@@ -40,17 +44,13 @@ jobs:
       - name: Publish
         run: dotnet publish ${{ steps.find_api.outputs.api_project }} -c Release -o publish
 
-      - name: Create zip
-        run: |
-          cd publish
-          zip -r ../publish.zip .
-
-      - name: Deploy zip via FTP
+      - name: Deploy via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
           server: ${{ secrets.FTP_SERVER }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
-          local-dir: publish.zip
+          port: 21
+          local-dir: publish/
           server-dir: /wwwroot/
           dangerous-clean-slate: false
