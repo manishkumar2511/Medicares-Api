@@ -17,8 +17,8 @@ Log.Logger = new LoggerConfiguration()
         {
             TableName = "Logs",
             AutoCreateSqlTable = true,
-            AutoCreateSqlDatabase = true
-        },restrictedToMinimumLevel : Serilog.Events.LogEventLevel.Error)
+            AutoCreateSqlDatabase = false
+        }, restrictedToMinimumLevel: Serilog.Events.LogEventLevel.Error)
     .WriteTo.File(
         path: "logs/log-.txt",
         rollingInterval: RollingInterval.Day,
