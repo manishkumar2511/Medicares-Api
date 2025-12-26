@@ -1,0 +1,6 @@
+@Medicares.Api_HostAddress = http://localhost:5193
+
+GET {{Medicares.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

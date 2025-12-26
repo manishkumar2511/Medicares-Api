@@ -1,0 +1,39 @@
+## [Visual Studio]
+.vs/
+[Bb]in/
+[Oo]bj/
+*.user
+*.userosscache
+*.sln.doccache
+*.suo
+
+## [Core]
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+## [Code Analysis]
+*.pfx
+*.publishsettings
+TestResults/
+
+## [User-specific files]
+*.user
+*.userosscache
+*.suo
+*.userprefs
+
+## [OS]
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+## [Logs]
+logs/
+*.log
+
+## [Appsettings]
+appsettings.json
+appsettings.Development.json
+# Note: Keep appsettings files if you want to push them, or ignore them for security and use environment variables.
+# For now, I'll keep them but usually they are ignored.
