@@ -41,6 +41,7 @@ public static class DatabaseInitializer
         }
 
         await SeedSuperAdminAsync(db, userManager, credentials, ct);
+        await SeedAdminAsync(db, userManager, credentials, ct);
         // Add more seeders as needed
     }
 
@@ -68,7 +69,7 @@ public static class DatabaseInitializer
     CredentialSettings credential,
     CancellationToken ct)
     {
-        string superEmail = credential.SuperAdmin; // Should be yadavmanishk2511@gmail.com from config
+        string superEmail = credential.SuperAdmin;
         string superPass = credential.Password;
 
         ApplicationUser? super = await userManager.FindByEmailAsync(superEmail);
@@ -77,7 +78,6 @@ public static class DatabaseInitializer
         // Ensure platform owner exists
         Owner? platformOwner = await GetOrCreatePlatformOwnerAsync(db, ct);
 
-        await db.SaveChangesAsync(ct);
         State? state = await db.Set<State>().FirstOrDefaultAsync(ct);
         Address address = new()
         {
@@ -93,7 +93,7 @@ public static class DatabaseInitializer
             UserName = superEmail,
             Email = superEmail,
             FirstName = "Manish",
-            LastName = "Admin",
+            LastName = "SuperAdmin",
             OwnerId = platformOwner.Id,
             IsActive = true,
             CreatedAt = DateTime.UtcNow,
@@ -105,6 +105,51 @@ public static class DatabaseInitializer
         if (result.Succeeded)
         {
             await userManager.AddToRolesAsync(super, [RoleConsts.SuperAdmin]);
+        }
+    }
+
+    private static async Task SeedAdminAsync(
+    ApplicationDbContext db,
+    UserManager<ApplicationUser> userManager,
+    CredentialSettings credential,
+    CancellationToken ct)
+    {
+        string adminEmail = credential.Admin;
+        string adminPass = credential.Password;
+
+        ApplicationUser? admin = await userManager.FindByEmailAsync(adminEmail);
+        if (admin != null) return;
+
+        // Ensure platform owner exists
+        Owner? platformOwner = await GetOrCreatePlatformOwnerAsync(db, ct);
+
+        State? state = await db.Set<State>().FirstOrDefaultAsync(ct);
+        Address address = new()
+        {
+            Id = Guid.NewGuid(),
+            AddressLine = "Not Disclosed",
+            PostalCode = "400001",
+            City = "Mumbai",
+            StateId = state?.Id ?? Guid.Empty,
+            Country = "India"
+        };
+        admin = new ApplicationUser
+        {
+            UserName = adminEmail,
+            Email = adminEmail,
+            FirstName = "Manish",
+            LastName = "Admin",
+            OwnerId = platformOwner.Id,
+            IsActive = true,
+            CreatedAt = DateTime.UtcNow,
+            EmailConfirmed = true,
+            Address = address
+        };
+
+        IdentityResult result = await userManager.CreateAsync(admin, adminPass);
+        if (result.Succeeded)
+        {
+            await userManager.AddToRolesAsync(admin, [RoleConsts.Admin]);
         }
     }
 

@@ -77,7 +77,8 @@ namespace Medicares.Persistence.Migrations
                         .HasColumnType("nvarchar(256)");
 
                     b.Property<Guid>("OwnerId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnOrder(100);
 
                     b.Property<string>("PasswordHash")
                         .HasColumnType("nvarchar(max)");

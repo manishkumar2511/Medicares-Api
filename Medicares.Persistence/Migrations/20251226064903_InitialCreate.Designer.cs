@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Medicares.Persistence.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20251226054714_InitialCreate")]
+    [Migration("20251226064903_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -80,7 +80,8 @@ namespace Medicares.Persistence.Migrations
                         .HasColumnType("nvarchar(256)");
 
                     b.Property<Guid>("OwnerId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnOrder(100);
 
                     b.Property<string>("PasswordHash")
                         .HasColumnType("nvarchar(max)");
