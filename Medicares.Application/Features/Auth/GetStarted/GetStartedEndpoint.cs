@@ -1,15 +1,18 @@
 using FastEndpoints;
+using Medicares.Application.Contracts.Extensions;
 using Medicares.Application.Contracts.Interfaces.Repositories;
-using Medicares.Application.Contracts.Models;
-using Medicares.Application.Features.Auth.Login;
+using Medicares.Application.Contracts.Notification;
+using Medicares.Application.Contracts.Wrappers;
 using Medicares.Domain.Entities.Auth;
+using Medicares.Domain.Entities.Common;
 using Medicares.Domain.Shared.Constant;
 using Medicares.Domain.Shared.DTO;
 using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore;
 
 namespace Medicares.Application.Features.Auth.GetStarted;
 
-public class GetStartedEndpoint(IIdentityService identityService) : Endpoint<GetStartedRequest, LoginResponse>
+public class GetStartedEndpoint(IIdentityService identityService, IUnitOfWork unitOfWork, IEmailService emailService) : Endpoint<GetStartedRequest, Result<bool>>
 {
     public override void Configure()
     {
@@ -18,69 +21,45 @@ public class GetStartedEndpoint(IIdentityService identityService) : Endpoint<Get
         Group<AuthGroup>();
         Summary(s =>
         {
-            s.Summary = AuthGroup.AuthConsts.RegisterOwnerSummary;
-            s.Description = AuthGroup.AuthConsts.RegisterOwnerDescription;
+            s.Summary = AuthGroup.AuthConsts.OwnerRegistrationSummary;
+            s.Description = AuthGroup.AuthConsts.OwnerRegistrationDescription;
         });
     }
 
     public override async Task HandleAsync(GetStartedRequest req, CancellationToken ct)
     {
-        (Owner? owner, string? ownerError) = await identityService.CreateOwnerAsync($"{req.FirstName} {req.LastName}", req.CompanyName, ct);
-        if (owner == null)
+        ApplicationUser? existingUser = await identityService.Users.FirstOrDefaultAsync(u => u.Email == req.Email, ct);
+        if (existingUser is not null)
         {
-            AddError(ownerError ?? "Failed to create owner");
-            await SendErrorsAsync(StatusCodes.Status400BadRequest, ct);
+            await SendOkAsync(await Result<bool>.FailAsync(AuthGroup.AuthMessages.OwnerEmailAlreadyExists), ct);
             return;
         }
 
-        (ApplicationUser? user, string? userError) = await identityService.CreateUserAsync(new UserDto
+        try
         {
-            FirstName = req.FirstName,
-            LastName = req.LastName,
-            Email = req.Email,
-            PhoneNumber = req.PhoneNumber,
-            Role = RoleConsts.Admin,
-            OwnerId = owner.Id
-        }, req.Password, null, ct);
-        
-        if (user == null)
-        {
-             AddError(userError ?? "Failed to create user");
-             await SendErrorsAsync(StatusCodes.Status400BadRequest, ct);
-             return;
-        }
-
-        LoginResult loginResult = await identityService.LoginAsync(req.Email, req.Password, false, ct);
-        if (!string.IsNullOrEmpty(loginResult.Error))
-        {
-             AddError(AuthGroup.AuthMessages.RegistrationLoginFailed + loginResult.Error);
-             await SendErrorsAsync(StatusCodes.Status400BadRequest, ct);
-             return;
-        }
-
-        IList<string> roles = await identityService.GetRolesAsync(user);
-        string userRole = roles.FirstOrDefault() ?? string.Empty;
-        Guid roleId = await identityService.GetRoleIdAsync(user.Id, userRole);
-
-        await SendOkAsync(new LoginResponse
-        {
-            RequiresMfa = false,
-            Message = AuthGroup.AuthMessages.RegistrationSuccessful, 
-            Token = loginResult.AccessToken,
-            RefreshToken = loginResult.RefreshToken,
-            User = new UserDto
+            await unitOfWork.ExecuteTransactionAsync(async () =>
             {
-                Id = user.Id,
-                Email = user.Email!,
-                FirstName = user.FirstName ?? string.Empty,
-                LastName = user.LastName ?? string.Empty,
-                PhoneNumber = user.PhoneNumber ?? string.Empty,
-                Role = userRole,
-                RoleId = roleId,
-                OwnerId = user.OwnerId,
-                IsActive = user.IsActive,
-                ProfileImageUrl = user.ProfilePictureUrl ?? string.Empty
-            }
-        }, ct);
+                Address address = req.MapToAddress();
+                Owner owner = req.MapToOwner();
+
+                await unitOfWork.Repository<Address>().AddAsync(address, ct);
+
+                (Owner? createdOwner, string? ownerError) = await identityService.CreateOwnerAsync(owner, ct);
+                if (createdOwner == null) throw new Exception(ownerError ?? AuthGroup.AuthMessages.RegistrationFailed);
+
+                UserDto userDto = req.MapToUserDto(createdOwner.Id);
+                (ApplicationUser? user, string? userError) = await identityService.CreateUserAsync(userDto, req.Password, address.Id, ct);
+
+                if (user == null) throw new Exception(userError ?? AuthGroup.AuthMessages.RegistrationFailed);
+            }, ct);
+
+            await emailService.SendWelcomeEmailAsync(req.Email, $"{req.FirstName} {req.LastName}", ct);
+
+            await SendOkAsync(await Result<bool>.SuccessAsync(true, AuthGroup.AuthMessages.RegistrationSuccessful), ct);
+        }
+        catch (Exception ex)
+        {
+            await SendOkAsync(await Result<bool>.FailAsync(ex.Message), ct);
+        }
     }
 }
