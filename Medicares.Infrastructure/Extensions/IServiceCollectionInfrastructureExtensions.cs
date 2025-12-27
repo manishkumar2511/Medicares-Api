@@ -1,8 +1,9 @@
 using Medicares.Application.Contracts.Interfaces;
-using Medicares.Application.Contracts.Interfaces.Repositories;
 using Medicares.Application.Contracts.Models.Mail;
+using Medicares.Application.Contracts.Notification;
 using Medicares.Domain.Entities.Auth;
 using Medicares.Domain.Shared.Constant;
+using Medicares.Infrastructure.Notification;
 using Medicares.Infrastructure.Services;
 using Medicares.Infrastructure.Settings;
 using Medicares.Persistence.Context;

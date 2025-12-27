@@ -1,6 +1,7 @@
 using FastEndpoints;
 using Medicares.Application.Contracts.Extensions;
 using Medicares.Application.Contracts.Interfaces.Repositories;
+using Medicares.Application.Contracts.Notification;
 using Medicares.Application.Contracts.Wrappers;
 using Medicares.Domain.Entities.Auth;
 using Medicares.Domain.Entities.Common;

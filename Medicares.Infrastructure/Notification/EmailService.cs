@@ -1,13 +1,13 @@
 using Medicares.Application.Contracts.Interfaces;
-using Medicares.Application.Contracts.Interfaces.Repositories;
 using Medicares.Application.Contracts.Models.Mail;
+using Medicares.Application.Contracts.Notification;
 using Medicares.Domain.Shared.Constant;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 using System.Net;
 using System.Net.Mail;
 
-namespace Medicares.Infrastructure.Services;
+namespace Medicares.Infrastructure.Notification;
 
 public sealed class EmailService : IEmailService
 {

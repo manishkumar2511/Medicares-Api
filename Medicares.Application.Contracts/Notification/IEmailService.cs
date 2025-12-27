@@ -1,4 +1,4 @@
-namespace Medicares.Application.Contracts.Interfaces.Repositories;
+namespace Medicares.Application.Contracts.Notification;
 
 public interface IEmailService
 {
