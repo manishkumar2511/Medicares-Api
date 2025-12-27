@@ -1,15 +1,19 @@
-using System.Text;
 using Medicares.Application.Contracts.Interfaces;
+using Medicares.Application.Contracts.Interfaces.Repositories;
+using Medicares.Application.Contracts.Models.Mail;
 using Medicares.Domain.Entities.Auth;
 using Medicares.Domain.Shared.Constant;
 using Medicares.Infrastructure.Services;
 using Medicares.Infrastructure.Settings;
 using Medicares.Persistence.Context;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Primitives;
 using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 namespace Medicares.Infrastructure.Extensions;
 
@@ -34,6 +38,12 @@ public static class IServiceCollectionExtensions
             .Bind(configuration.GetSection(ApplicationConsts.ConfigKeys.JwtSettings))
             .ValidateDataAnnotations();
 
+        services.AddOptionsWithValidateOnStart<MailSettings>()
+            .Configure<IConfiguration>((settings, config) => {
+                config.GetSection("Email").Bind(settings.Email);
+                config.GetSection("SMTP").Bind(settings.Smtp);
+            });
+
         return services;
     }
 
@@ -45,6 +55,7 @@ public static class IServiceCollectionExtensions
 
         services.AddScoped<IJwtService, JwtService>();
         services.AddScoped<ICurrentUserService, CurrentUserService>();
+        services.AddScoped<IEmailService, EmailService>();
 
         return services;
     }
@@ -108,15 +119,15 @@ public static class IServiceCollectionExtensions
 
                 options.Events = new JwtBearerEvents
                 {
-                    OnMessageReceived = context =>
+                    OnMessageReceived = (MessageReceivedContext context) =>
                     {
-                        var accessToken =
+                        StringValues accessToken =
                             context.Request.Query[
                                 ApplicationConsts.SignalR.AccessTokenQuery];
 
-                        var path = context.HttpContext.Request.Path;
+                        PathString path = context.HttpContext.Request.Path;
 
-                        if (!string.IsNullOrWhiteSpace(accessToken) &&
+                        if (!StringValues.IsNullOrEmpty(accessToken) &&
                             path.StartsWithSegments(
                                 ApplicationConsts.SignalR.HubPath))
                         {
@@ -126,6 +137,7 @@ public static class IServiceCollectionExtensions
                         return Task.CompletedTask;
                     }
                 };
+
             });
 
         services.AddAuthorizationBuilder()

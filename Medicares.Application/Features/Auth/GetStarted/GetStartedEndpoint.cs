@@ -1,9 +1,7 @@
 using FastEndpoints;
 using Medicares.Application.Contracts.Extensions;
 using Medicares.Application.Contracts.Interfaces.Repositories;
-using Medicares.Application.Contracts.Models;
 using Medicares.Application.Contracts.Wrappers;
-using Medicares.Application.Features.Auth.Login;
 using Medicares.Domain.Entities.Auth;
 using Medicares.Domain.Entities.Common;
 using Medicares.Domain.Shared.Constant;
@@ -13,7 +11,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Medicares.Application.Features.Auth.GetStarted;
 
-public class GetStartedEndpoint(IIdentityService identityService, IUnitOfWork unitOfWork) : Endpoint<GetStartedRequest, Result<bool>>
+public class GetStartedEndpoint(IIdentityService identityService, IUnitOfWork unitOfWork, IEmailService emailService) : Endpoint<GetStartedRequest, Result<bool>>
 {
     public override void Configure()
     {
@@ -53,6 +51,8 @@ public class GetStartedEndpoint(IIdentityService identityService, IUnitOfWork un
 
                 if (user == null) throw new Exception(userError ?? AuthGroup.AuthMessages.RegistrationFailed);
             }, ct);
+
+            await emailService.SendWelcomeEmailAsync(req.Email, $"{req.FirstName} {req.LastName}", ct);
 
             await SendOkAsync(await Result<bool>.SuccessAsync(true, AuthGroup.AuthMessages.RegistrationSuccessful), ct);
         }
