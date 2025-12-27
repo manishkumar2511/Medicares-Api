@@ -2,6 +2,7 @@ using FastEndpoints;
 using Medicares.Application.Contracts.Extensions;
 using Medicares.Application.Contracts.Interfaces.Repositories;
 using Medicares.Application.Contracts.Models;
+using Medicares.Application.Contracts.Wrappers;
 using Medicares.Application.Features.Auth.Login;
 using Medicares.Domain.Entities.Auth;
 using Medicares.Domain.Entities.Common;
@@ -12,7 +13,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Medicares.Application.Features.Auth.GetStarted;
 
-public class GetStartedEndpoint(IIdentityService identityService, IUnitOfWork unitOfWork) : Endpoint<GetStartedRequest, object>
+public class GetStartedEndpoint(IIdentityService identityService, IUnitOfWork unitOfWork) : Endpoint<GetStartedRequest, Result<bool>>
 {
     public override void Configure()
     {
@@ -28,33 +29,36 @@ public class GetStartedEndpoint(IIdentityService identityService, IUnitOfWork un
 
     public override async Task HandleAsync(GetStartedRequest req, CancellationToken ct)
     {
-        bool userExists = await identityService.Users.AnyAsync(u => u.Email == req.Email, ct);
-        if (userExists)
+        ApplicationUser? existingUser = await identityService.Users.FirstOrDefaultAsync(u => u.Email == req.Email, ct);
+        if (existingUser is not null)
         {
-            AddError(AuthGroup.AuthMessages.OwnerEmailAlreadyExists);
-            await SendErrorsAsync(StatusCodes.Status400BadRequest, ct);
+            await SendOkAsync(await Result<bool>.FailAsync(AuthGroup.AuthMessages.OwnerEmailAlreadyExists), ct);
             return;
         }
 
-        await unitOfWork.ExecuteTransactionAsync(async () =>
+        try
         {
-            Address address = req.MapToAddress();
-            Owner owner = req.MapToOwner();
+            await unitOfWork.ExecuteTransactionAsync(async () =>
+            {
+                Address address = req.MapToAddress();
+                Owner owner = req.MapToOwner();
 
-            await unitOfWork.Repository<Address>().AddAsync(address, ct);
-            
-            (Owner? createdOwner, string? ownerError) = await identityService.CreateOwnerAsync(owner, ct);
-            if (createdOwner == null) ThrowError(ownerError ?? AuthGroup.AuthMessages.RegistrationFailed);
+                await unitOfWork.Repository<Address>().AddAsync(address, ct);
 
-            UserDto userDto = req.MapToUserDto(createdOwner.Id);
-            (ApplicationUser? user, string? userError) = await identityService.CreateUserAsync(userDto, req.Password, address.Id, ct);
-            
-            if (user == null) ThrowError(userError ?? AuthGroup.AuthMessages.RegistrationFailed);
-        }, ct);
+                (Owner? createdOwner, string? ownerError) = await identityService.CreateOwnerAsync(owner, ct);
+                if (createdOwner == null) throw new Exception(ownerError ?? AuthGroup.AuthMessages.RegistrationFailed);
 
-        await SendOkAsync(new
+                UserDto userDto = req.MapToUserDto(createdOwner.Id);
+                (ApplicationUser? user, string? userError) = await identityService.CreateUserAsync(userDto, req.Password, address.Id, ct);
+
+                if (user == null) throw new Exception(userError ?? AuthGroup.AuthMessages.RegistrationFailed);
+            }, ct);
+
+            await SendOkAsync(await Result<bool>.SuccessAsync(true, AuthGroup.AuthMessages.RegistrationSuccessful), ct);
+        }
+        catch (Exception ex)
         {
-            Message = AuthGroup.AuthMessages.RegistrationSuccessful
-        }, ct);
+            await SendOkAsync(await Result<bool>.FailAsync(ex.Message), ct);
+        }
     }
 }
