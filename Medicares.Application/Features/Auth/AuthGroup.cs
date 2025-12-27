@@ -33,8 +33,8 @@ public class AuthGroup : Group
         public const string UserLogoutSummary = "User Logout";
         public const string UserLogOutDescription = "Logout the current user";
 
-        public const string RegisterOwnerSummary = "Register as Owner";
-        public const string RegisterOwnerDescription = "Create a new Owner account and initial User";
+        public const string OwnerRegistrationSummary = "Owner Registration";
+        public const string OwnerRegistrationDescription = "Create a new Owner account and initial User";
     }
 
     // Messages
@@ -48,5 +48,6 @@ public class AuthGroup : Group
         public const string MFACodeSent = "MFA code sent";
         public const string LogOutFailed = "Logout failed";
         public const string LogOutSuccess = "Logout successful";
+        public const string OwnerEmailAlreadyExists = "Owner associated with this email already exists";
     }
 }

@@ -18,7 +18,7 @@ public interface IIdentityService
     Task<(bool Success, string? Error)> LogoutAsync(Guid userId, CancellationToken ct = default);
 
     // Super Admin specific methods (Owner)
-    Task<(Owner? Owner, string? Error)> CreateOwnerAsync(string name, string companyName, CancellationToken ct = default);
+    Task<(Owner? Owner, string? Error)> CreateOwnerAsync(Owner owner, CancellationToken ct = default);
     Task<(bool Success, string? Error)> DeactivateOwnerAsync(Guid ownerId, CancellationToken ct = default);
     Task<(bool Success, string? Error)> ActivateOwnerAsync(Guid ownerId, CancellationToken ct = default);
     Task<IEnumerable<Owner>> GetAllOwnersAsync(CancellationToken ct = default);

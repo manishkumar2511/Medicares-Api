@@ -88,9 +88,9 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
                         auditEntity.CreatedAt = now;
                         auditEntity.CreatedBy = userId;
                         if (entityEntry.Entity is IOwnerEntity ownerEntity)
-                           
+                        {
                             ownerEntity.OwnerId = CurrentOwnerId ?? currentUserService.OwnerId ?? ownerEntity.OwnerId; 
-                          
+                        }
                         break;
 
                     case EntityState.Modified:
