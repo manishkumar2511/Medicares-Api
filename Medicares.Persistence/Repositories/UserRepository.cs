@@ -17,30 +17,35 @@ public class UserRepository : IUserRepository
 
     public async Task<IdentityResult> CreateAsync(ApplicationUser user, string password)
     {
-        return await _userManager.CreateAsync(user, password);
+        IdentityResult result = await _userManager.CreateAsync(user, password);
+        return result;
     }
 
     public async Task<ApplicationUser?> FindByEmailAsync(string email)
     {
-        return await _userManager.FindByEmailAsync(email);
+        ApplicationUser? user = await _userManager.FindByEmailAsync(email);
+        return user;
     }
 
     public async Task<bool> CheckPasswordAsync(ApplicationUser user, string password)
     {
-        return await _userManager.CheckPasswordAsync(user, password);
+        bool isValid = await _userManager.CheckPasswordAsync(user, password);
+        return isValid;
     }
 
     public async Task<IList<string>> GetRolesAsync(ApplicationUser user)
     {
-        return await _userManager.GetRolesAsync(user);
+        IList<string> roles = await _userManager.GetRolesAsync(user);
+        return roles;
     }
 
     public async Task<SignInResult> PasswordSignInAsync(string email, string password, bool rememberMe)
     {
-         var user = await _userManager.FindByEmailAsync(email);
-         if (user == null) return SignInResult.Failed;
+        ApplicationUser? user = await _userManager.FindByEmailAsync(email);
+        if (user == null) return SignInResult.Failed;
 
-        return await _signInManager.PasswordSignInAsync(user, password, rememberMe, lockoutOnFailure: false);
+        SignInResult result = await _signInManager.PasswordSignInAsync(user, password, rememberMe, lockoutOnFailure: false);
+        return result;
     }
 
     public async Task SignOutAsync()

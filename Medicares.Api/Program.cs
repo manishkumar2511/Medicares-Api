@@ -55,15 +55,9 @@ app.UseHttpsRedirection()
          c.Serializer.Options.Converters.Add(new JsonStringEnumConverter());
          c.Endpoints.RoutePrefix = "api";
      });
-
-// Only for Development Environment
-if (app.Environment.IsDevelopment())
-{
-    
     
     app.UseSwaggerGen(); 
     app.UseSwaggerUi(c => c.ConfigureDefaults()); 
-}
 
 app.UseExceptionHandler();
 

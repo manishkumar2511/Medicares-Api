@@ -26,7 +26,9 @@ public static class IServiceCollectionApiExtensions
             options.AddPolicy("AllowAngularApp", builder =>
             {
                 builder
-                    .WithOrigins("http://localhost:4200", "http://localhost")
+                    .WithOrigins("http://localhost:4200",
+                    "http://localhost",
+                    "https://medicaresolutions.netlify.app")
                     .AllowAnyHeader()
                     .AllowAnyMethod()
                     .AllowCredentials();

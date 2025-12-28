@@ -19,23 +19,25 @@ public class UnitOfWork : IUnitOfWork
 
     public async Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken cancellationToken = default)
     {
-        return await _dbContext.Database.BeginTransactionAsync(cancellationToken);
+        IDbContextTransaction transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
+        return transaction;
     }
 
     public IRepository<T> Repository<T>() where T : BaseEntity
     {
-        var type = typeof(T).Name;
+        string type = typeof(T).Name;
 
         if (!_repositories.ContainsKey(type))
         {
-            var repositoryType = typeof(Repository<>);
-            var repositoryInstance = Activator.CreateInstance(repositoryType.MakeGenericType(typeof(T)), _dbContext);
+            Type repositoryType = typeof(Repository<>);
+            object repositoryInstance = Activator.CreateInstance(repositoryType.MakeGenericType(typeof(T)), _dbContext)!;
             _repositories.Add(type, repositoryInstance);
         }
 
-        return (IRepository<T>)_repositories[type]!;
+        IRepository<T> repository = (IRepository<T>)_repositories[type]!;
+        return repository;
     }
-    
+
     public void SetOwnerId(Guid ownerId)
     {
         _dbContext.CurrentOwnerId = ownerId;
@@ -43,11 +45,12 @@ public class UnitOfWork : IUnitOfWork
 
     public async Task<int> SaveAsync(CancellationToken cancellationToken = default)
     {
-        return await _dbContext.SaveChangesAsync(cancellationToken);
+        int result = await _dbContext.SaveChangesAsync(cancellationToken);
+        return result;
     }
 
     public void Dispose()
     {
-         _dbContext.Dispose();
+        _dbContext.Dispose();
     }
 }
