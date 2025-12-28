@@ -5,9 +5,7 @@ using Medicares.Application.Contracts.Notification;
 using Medicares.Application.Contracts.Wrappers;
 using Medicares.Domain.Entities.Auth;
 using Medicares.Domain.Entities.Common;
-using Medicares.Domain.Shared.Constant;
 using Medicares.Domain.Shared.DTO;
-using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 
 namespace Medicares.Application.Features.Auth.GetStarted;
@@ -18,6 +16,7 @@ public class GetStartedEndpoint(IIdentityService identityService, IUnitOfWork un
     {
         Post(AuthGroup.AuthApiRoutes.GetStarted);
         AllowAnonymous();
+        AllowFileUploads();
         Group<AuthGroup>();
         Summary(s =>
         {
