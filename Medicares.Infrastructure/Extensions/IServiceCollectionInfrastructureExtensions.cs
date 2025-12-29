@@ -42,7 +42,6 @@ public static class IServiceCollectionExtensions
         services.AddOptionsWithValidateOnStart<MailSettings>()
             .Configure<IConfiguration>((settings, config) => {
                 config.GetSection("Email").Bind(settings.Email);
-                config.GetSection("SMTP").Bind(settings.Smtp);
             });
 
         return services;
