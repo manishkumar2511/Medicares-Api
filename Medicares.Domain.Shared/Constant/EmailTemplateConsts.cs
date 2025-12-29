@@ -14,5 +14,10 @@
             "If you need any assistance, our support team is always here to help.";
 
         public const string OwnerWelcomeButtonText = "Login Here";
+
+        public const string MfaCodeSubject = "Your MFA Code - {0}";
+        public const string MfaCodeTitle = "Two-Factor Authentication";
+        public const string MfaCodeMainText = "Use the following code to complete your login. This code will expire in 5 minutes.";
+        public const string MfaCodeSecondaryText = "If you did not attempt to login, please change your password immediately.";
     }
 }

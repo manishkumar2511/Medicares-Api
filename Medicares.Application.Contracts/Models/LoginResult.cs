@@ -1,11 +1,13 @@
+using Medicares.Domain.Entities.Auth;
+
 namespace Medicares.Application.Contracts.Models;
 
 public class LoginResult
 {
-    public bool Succeeded { get; set; }
-    public string? AccessToken { get; set; }
-    public string? RefreshToken { get; set; }
-    public DateTime? Expiry { get; set; }
+    public ApplicationUser? User { get; set; }
+    public string? Role { get; set; }
+    public JwtTokenResult? Token { get; set; }
+    public RefreshToken? RefreshToken { get; set; }
     public string? Error { get; set; }
-    public bool RequiresTwoFactor { get; set; }
+    public bool RequiresMfa { get; set; }
 }

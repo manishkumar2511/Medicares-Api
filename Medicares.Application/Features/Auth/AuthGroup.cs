@@ -21,7 +21,7 @@ public class AuthGroup : Group
         public const string TagName = "Auth";
         public const string Login = "login";
         public const string Logout = "logout";
-        public const string RefreshToken = "refresh-token";
+        public const string Verify2FACode = "verify-2fa";
         public const string GetStarted = "get-started";
     }
 
@@ -29,6 +29,9 @@ public class AuthGroup : Group
     {
         public const string LoginSummary = "User Login";
         public const string LoginDescription = "Authenticate user and return JWT token";
+
+        public const string VerifyMFASummary = "Verify MFA Code";
+        public const string VerifyMFADescription = "Verify the 2FA code and return JWT token";
 
         public const string UserLogoutSummary = "User Logout";
         public const string UserLogOutDescription = "Logout the current user";
@@ -41,6 +44,7 @@ public class AuthGroup : Group
     public static class AuthMessages
     {
         public const string LoginSuccessful = "Login successful";
+        public const string AuthenticationSuccess = "Authentication successful";
         public const string RegistrationSuccessful = "Registration successful";
         public const string RegistrationFailed = "Registration failed";
         public const string RegistrationLoginFailed = "Registration successful but login failed: ";
