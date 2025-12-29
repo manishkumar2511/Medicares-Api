@@ -42,7 +42,7 @@ public class IdentityService : IIdentityService
 
     public async Task<Guid> GetRoleIdAsync(Guid userId, string userRole)
     {
-        ApplicationUser? user = await _userManager.FindByIdAsync(userId.ToString());
+        ApplicationUser? user = await _userManager.Users.IgnoreQueryFilters().FirstOrDefaultAsync(u => u.Id == userId);
         if (user == null) return Guid.Empty;
         
         Role? role = await _roleManager.FindByNameAsync(userRole);
@@ -56,6 +56,7 @@ public class IdentityService : IIdentityService
     CancellationToken ct = default)
     {
         ApplicationUser? user = await _userManager.Users
+            .IgnoreQueryFilters()
             .FirstOrDefaultAsync(u => u.Email == email, ct);
 
         if (user == null)
@@ -113,8 +114,11 @@ public class IdentityService : IIdentityService
 
     public async Task<(bool Success, string? Error)> SendMfaCodeAsync(string email, CancellationToken ct = default)
     {
-        ApplicationUser? user = await _userManager.FindByEmailAsync(email);
+        ApplicationUser? user = await _userManager.Users
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(u => u.Email == email, ct);
         if (user == null)
+
             return (false, "User not found");
 
         string code = await _userManager.GenerateTwoFactorTokenAsync(user, TokenOptions.DefaultEmailProvider);
@@ -129,6 +133,7 @@ public class IdentityService : IIdentityService
     CancellationToken ct = default)
     {
         ApplicationUser? user = await _userManager.Users
+            .IgnoreQueryFilters()
             .FirstOrDefaultAsync(u => u.Email == email, ct);
 
         if (user == null)

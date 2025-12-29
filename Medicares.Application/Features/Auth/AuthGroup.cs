@@ -22,6 +22,7 @@ public class AuthGroup : Group
         public const string Login = "login";
         public const string Logout = "logout";
         public const string Verify2FACode = "verify-2fa";
+        public const string Resend2FACode = "resend-2fa";
         public const string GetStarted = "get-started";
     }
 
@@ -29,6 +30,9 @@ public class AuthGroup : Group
     {
         public const string LoginSummary = "User Login";
         public const string LoginDescription = "Authenticate user and return JWT token";
+
+        public const string ResendMfaSummary = "Resend MFA Code";
+        public const string ResendMfaDescription = "Resend the MFA code to the user's email";
 
         public const string VerifyMFASummary = "Verify MFA Code";
         public const string VerifyMFADescription = "Verify the 2FA code and return JWT token";
