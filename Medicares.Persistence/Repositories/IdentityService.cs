@@ -1,5 +1,6 @@
 using Medicares.Application.Contracts.Interfaces;
 using Medicares.Application.Contracts.Interfaces.Repositories;
+using Medicares.Application.Contracts.Notification;
 using Medicares.Application.Contracts.Models;
 using Medicares.Domain.Entities.Auth;
 using Medicares.Domain.Shared.Constant;
@@ -18,18 +19,22 @@ public class IdentityService : IIdentityService
     private readonly ApplicationDbContext _dbContext;
     private readonly RoleManager<Role> _roleManager;
 
+    private readonly IEmailService _emailService;
+
     public IdentityService(
         UserManager<ApplicationUser> userManager,
         SignInManager<ApplicationUser> signInManager,
         IJwtService jwtService,
         ApplicationDbContext dbContext,
-        RoleManager<Role> roleManager)
+        RoleManager<Role> roleManager,
+        IEmailService emailService)
     {
         _userManager = userManager;
         _signInManager = signInManager;
         _jwtService = jwtService;
         _dbContext = dbContext;
         _roleManager = roleManager;
+        _emailService = emailService;
     }
 
     public IQueryable<ApplicationUser> Users => _userManager.Users;
@@ -44,94 +49,172 @@ public class IdentityService : IIdentityService
         return role?.Id ?? Guid.Empty;
     }
 
-    public async Task<LoginResult> LoginAsync(string email, string password, bool require2FA = true, CancellationToken ct = default)
+    public async Task<LoginResult> LoginAsync(
+    string email,
+    string password,
+    bool require2FA = true,
+    CancellationToken ct = default)
     {
-        ApplicationUser? user = await _userManager.FindByEmailAsync(email);
-        if (user == null) return new LoginResult { Error = "User not found" };
+        ApplicationUser? user = await _userManager.Users
+            .FirstOrDefaultAsync(u => u.Email == email, ct);
 
-        if (!user.IsActive) return new LoginResult { Error = "User is deactivated" };
+        if (user == null)
+            return new LoginResult { Error = "User not found" };
 
-        Microsoft.AspNetCore.Identity.SignInResult result = await _signInManager.PasswordSignInAsync(user, password, false, false);
-        
-        if (!result.Succeeded) return new LoginResult { Error = "Invalid credentials" };
+        if (!user.IsActive)
+            return new LoginResult { Error = "User is deactivated" };
+
+        SignInResult signInResult =
+            await _signInManager.CheckPasswordSignInAsync(user, password, false);
+
+        if (!signInResult.Succeeded)
+            return new LoginResult { Error = "Invalid credentials" };
 
         IList<string> roles = await _userManager.GetRolesAsync(user);
-        string role = roles.FirstOrDefault() ?? RoleConsts.StoreStaff;
-        Role? roleEntity = await _roleManager.FindByNameAsync(role);
+        string primaryRole = roles.FirstOrDefault() ?? RoleConsts.StoreStaff;
+
+        if (user.TwoFactorEnabled && require2FA)
+        {
+            return new LoginResult
+            {
+                User = user,
+                Role = primaryRole,
+                RequiresMfa = true
+            };
+        }
+
+        Role? roleEntity = await _roleManager.FindByNameAsync(primaryRole);
         Guid roleId = roleEntity?.Id ?? Guid.Empty;
 
-        JwtTokenResult tokenResult = _jwtService.GenerateAccessToken(user, user.Email!, role, user.OwnerId, roleId);
-        RefreshToken refreshToken = _jwtService.GenerateRefreshToken(user.Id, user.OwnerId);
+        JwtTokenResult accessTokenResult =
+            _jwtService.GenerateAccessToken(
+                user,
+                user.Email!,
+                primaryRole,
+                user.OwnerId,
+                roleId);
 
-        await _dbContext.RefreshTokens.AddAsync(refreshToken, ct);
+        RefreshToken issuedRefreshToken =
+            _jwtService.GenerateRefreshToken(user.Id, user.OwnerId);
+
+        await _dbContext.RefreshTokens.AddAsync(issuedRefreshToken, ct);
         await _dbContext.SaveChangesAsync(ct);
 
         return new LoginResult
         {
-            Succeeded = true,
-            AccessToken = tokenResult.AccessToken,
-            Expiry = tokenResult.ExpiresAt,
-            RefreshToken = refreshToken.Token
+            User = user,
+            Role = primaryRole,
+            Token = accessTokenResult,
+            RefreshToken = issuedRefreshToken
         };
     }
+
+
 
     public async Task<(bool Success, string? Error)> SendMfaCodeAsync(string email, CancellationToken ct = default)
     {
-        // Placeholder for MFA
-        return (true, null);
+        ApplicationUser? user = await _userManager.FindByEmailAsync(email);
+        if (user == null)
+            return (false, "User not found");
+
+        string code = await _userManager.GenerateTwoFactorTokenAsync(user, TokenOptions.DefaultEmailProvider);
+        
+        bool success = await _emailService.SendMfaCodeAsync(user.Email!, $"{user.FirstName} {user.LastName}", code, ct);
+        return success ? (true, null) : (false, "Failed to send MFA code");
     }
 
-    public async Task<LoginResult> VerifyMfaAsync(string email, string code, CancellationToken ct = default)
+    public async Task<LoginResult> Verify2FACodeAsync(
+    string email,
+    string code,
+    CancellationToken ct = default)
     {
-         // Placeholder for MFA Verify
-         ApplicationUser? user = await _userManager.FindByEmailAsync(email);
-         if (user == null) return new LoginResult { Error = "User not found" };
-         
-         IList<string> roles = await _userManager.GetRolesAsync(user);
-         string role = roles.FirstOrDefault() ?? RoleConsts.StoreStaff;
-         Role? roleEntity = await _roleManager.FindByNameAsync(role);
-         Guid roleId = roleEntity?.Id ?? Guid.Empty;
+        ApplicationUser? user = await _userManager.Users
+            .FirstOrDefaultAsync(u => u.Email == email, ct);
 
-         JwtTokenResult tokenResult = _jwtService.GenerateAccessToken(user, user.Email!, role, user.OwnerId, roleId);
-         RefreshToken refreshToken = _jwtService.GenerateRefreshToken(user.Id, user.OwnerId);
+        if (user == null)
+            return new LoginResult { Error = "User not found" };
 
-         await _dbContext.RefreshTokens.AddAsync(refreshToken, ct);
-         await _dbContext.SaveChangesAsync(ct);
+        bool isValid = await _userManager.VerifyTwoFactorTokenAsync(user, TokenOptions.DefaultEmailProvider, code);
+        if (!isValid)
+            return new LoginResult { Error = "Invalid code" };
 
-         return new LoginResult
-         {
-             Succeeded = true,
-             AccessToken = tokenResult.AccessToken,
-             Expiry = tokenResult.ExpiresAt,
-             RefreshToken = refreshToken.Token
-         };
-    }
-
-    public async Task<LoginResult> RefreshTokenAsync(string refreshToken, CancellationToken ct = default)
-    {
-        RefreshToken? tokenEntity = await _dbContext.RefreshTokens
-            .Include(r => r.User)
-            .FirstOrDefaultAsync(r => r.Token == refreshToken && r.DeletedAt == null, ct);
-
-        if (tokenEntity == null || !tokenEntity.IsActive)
-            return new LoginResult { Error = "Invalid refresh token" };
-
-        ApplicationUser user = tokenEntity.User;
         IList<string> roles = await _userManager.GetRolesAsync(user);
-        string role = roles.FirstOrDefault() ?? RoleConsts.StoreStaff;
-        Role? roleEntity = await _roleManager.FindByNameAsync(role);
+        string primaryRole = roles.FirstOrDefault() ?? RoleConsts.StoreStaff;
+
+        Role? roleEntity = await _roleManager.FindByNameAsync(primaryRole);
         Guid roleId = roleEntity?.Id ?? Guid.Empty;
 
-        JwtTokenResult tokenResult = _jwtService.GenerateAccessToken(user, user.Email!, role, user.OwnerId, roleId);
-        
+        JwtTokenResult accessTokenResult =
+            _jwtService.GenerateAccessToken(
+                user,
+                user.Email!,
+                primaryRole,
+                user.OwnerId,
+                roleId);
+
+        RefreshToken issuedRefreshToken =
+            _jwtService.GenerateRefreshToken(user.Id, user.OwnerId);
+
+        await _dbContext.RefreshTokens.AddAsync(issuedRefreshToken, ct);
+        await _dbContext.SaveChangesAsync(ct);
+
         return new LoginResult
         {
-            Succeeded = true,
-            AccessToken = tokenResult.AccessToken,
-            Expiry = tokenResult.ExpiresAt,
-            RefreshToken = refreshToken
+            User = user,
+            Role = primaryRole,
+            Token = accessTokenResult,
+            RefreshToken = issuedRefreshToken
         };
     }
+
+
+    public async Task<LoginResult> RefreshTokenAsync(
+    string refreshToken,
+    CancellationToken ct = default)
+    {
+        RefreshToken? existingRefreshToken =
+            await _dbContext.RefreshTokens
+                .Include(rt => rt.User)
+                .FirstOrDefaultAsync(
+                    rt => rt.Token == refreshToken && rt.DeletedAt == null,
+                    ct);
+
+        if (existingRefreshToken == null || !existingRefreshToken.IsActive)
+            return new LoginResult { Error = "Invalid refresh token" };
+
+        ApplicationUser user = existingRefreshToken.User;
+
+        IList<string> roles = await _userManager.GetRolesAsync(user);
+        string primaryRole = roles.FirstOrDefault() ?? RoleConsts.StoreStaff;
+
+        Role? roleEntity = await _roleManager.FindByNameAsync(primaryRole);
+        Guid roleId = roleEntity?.Id ?? Guid.Empty;
+
+        JwtTokenResult accessTokenResult =
+            _jwtService.GenerateAccessToken(
+                user,
+                user.Email!,
+                primaryRole,
+                user.OwnerId,
+                roleId);
+
+        RefreshToken issuedRefreshToken =
+            _jwtService.GenerateRefreshToken(user.Id, user.OwnerId);
+
+        existingRefreshToken.DeletedAt = DateTime.UtcNow;
+
+        await _dbContext.RefreshTokens.AddAsync(issuedRefreshToken, ct);
+        await _dbContext.SaveChangesAsync(ct);
+
+        return new LoginResult
+        {
+            User = user,
+            Role = primaryRole,
+            Token = accessTokenResult,
+            RefreshToken = issuedRefreshToken
+        };
+    }
+
 
     public async Task<(ApplicationUser? User, string? Error)> CreateUserAsync(UserDto userRequest, string password, Guid? addressId, CancellationToken ct = default)
     {
@@ -145,6 +228,7 @@ public class IdentityService : IIdentityService
             OwnerId = userRequest.OwnerId.GetValueOrDefault(), 
             IsActive = true,
             EmailConfirmed = true,
+            TwoFactorEnabled = true,
             CreatedAt = DateTime.UtcNow,
             AddressId = addressId
         };
@@ -234,7 +318,9 @@ public class IdentityService : IIdentityService
         IdentityResult result = await _userManager.ResetPasswordAsync(user, req.Token, req.NewPassword);
         if (!result.Succeeded) return new LoginResult { Error = string.Join(", ", result.Errors.Select(e => e.Description)) };
 
-        return new LoginResult { Succeeded = true };
+        // Auto-login the user after successful password reset
+
+        return await LoginAsync(req.Email, req.NewPassword, false, ct);
     }
 
     public async Task<(bool success, string? Error)> ChangePasswordAsync(Guid userId, string currentPassword, string newPassword, CancellationToken ct = default)

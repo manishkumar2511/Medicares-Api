@@ -88,6 +88,45 @@ namespace Medicares.Infrastructure.Notification
                 cancellationToken);
         }
 
+        public async Task<bool> SendMfaCodeAsync(
+                string email,
+                string fullName,
+                string code,
+                CancellationToken cancellationToken = default)
+        {
+            string? templatePath = ResolveTemplatePath("EmailTemplate.html");
+
+            if (templatePath is null)
+            {
+                Console.WriteLine("Email template not found.");
+                return false;
+            }
+
+            string body = await File.ReadAllTextAsync(templatePath, cancellationToken);
+            string webUrl = _configuration["AppSettings:WebUrl"]!;
+
+            string codeHtml = $@"
+                <div style=""background:#e0f2fe;color:#0284c7;font-size:32px;font-weight:700;letter-spacing:6px;padding:24px 48px;border-radius:12px;display:inline-block;"">
+                    {code}
+                </div>";
+
+            body = body
+                .Replace("{{Title}}", EmailTemplateConsts.MfaCodeTitle)
+                .Replace("{{Greeting}}", $"Dear {fullName}")
+                .Replace("{{MainText}}", EmailTemplateConsts.MfaCodeMainText)
+                .Replace("{{ActionButton}}", codeHtml)
+                .Replace("{{SecondaryText}}", EmailTemplateConsts.MfaCodeSecondaryText)
+                .Replace("{{CurrentYear}}", DateTime.UtcNow.Year.ToString());
+
+            string subject = string.Format(EmailTemplateConsts.MfaCodeSubject, code);
+
+            return await SendEmailAsync(
+               email,
+               subject,
+               body,
+               cancellationToken);
+        }
+
         private SendGridClient CreateSendGridClient()
         {
             string? apiKey = _configuration["SendGrid:ApiKey"];
