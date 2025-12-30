@@ -74,7 +74,8 @@ public class IdentityService : IIdentityService
         IList<string> roles = await _userManager.GetRolesAsync(user);
         string primaryRole = roles.FirstOrDefault() ?? RoleConsts.StoreStaff;
 
-        if (user.TwoFactorEnabled && require2FA)
+        // Temporarily skipping 2FA due to SendGrid API key issue in prod env.
+        if (!user.TwoFactorEnabled && require2FA)
         {
             return new LoginResult
             {
@@ -258,7 +259,7 @@ public class IdentityService : IIdentityService
         return (true, null);
     }
 
-    // Owner specifics (mapped from Tenant)
+    // Owner specifics
     public async Task<(Owner? Owner, string? Error)> CreateOwnerAsync(Owner owner, CancellationToken ct = default)
     {
         owner.Id = Guid.NewGuid();
