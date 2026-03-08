@@ -10,7 +10,7 @@ public interface IIdentityService
     IQueryable<Role> Roles { get; }
 
     Task<Guid> GetRoleIdAsync(Guid userId, string userRole);
-    Task<LoginResult> LoginAsync(string email, string password, bool require2FA = true, CancellationToken ct = default);
+    Task<LoginResult> LoginAsync(string email, string password, bool require2FA = false, CancellationToken ct = default);
     Task<(bool Success, string? Error)> SendMfaCodeAsync(string email, CancellationToken ct = default);
     Task<LoginResult> Verify2FACodeAsync(string email, string code, CancellationToken ct = default);
     Task<LoginResult> RefreshTokenAsync(string refreshToken, CancellationToken ct = default);
