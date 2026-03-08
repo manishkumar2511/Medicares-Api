@@ -25,7 +25,7 @@ public class LoginEndpoint(IIdentityService identityService)
     public override async Task HandleAsync(LoginRequest req, CancellationToken ct)
     {
         LoginResult result =
-            await identityService.LoginAsync(req.Email, req.Password, true, ct);
+            await identityService.LoginAsync(req.Email, req.Password, false, ct);
 
         if (!string.IsNullOrEmpty(result.Error))
         {

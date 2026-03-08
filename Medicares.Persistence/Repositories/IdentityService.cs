@@ -52,7 +52,7 @@ public class IdentityService : IIdentityService
     public async Task<LoginResult> LoginAsync(
     string email,
     string password,
-    bool require2FA = true,
+    bool require2FA = false,
     CancellationToken ct = default)
     {
         ApplicationUser? user = await _userManager.Users
