@@ -23,4 +23,5 @@ public interface IRepository<T> where T : BaseEntity
     Task DeleteAsync(T entity);
     Task DeleteRangeAsync(IList<T> entities);
     Task<bool> EntityExistsAsync(Expression<Func<T, bool>> predicate, CancellationToken cancellationToken);
+    Task<List<T>> GetWithSpecificationAsync(Specifications.ISpecification<T> spec, CancellationToken ct = default);
 }

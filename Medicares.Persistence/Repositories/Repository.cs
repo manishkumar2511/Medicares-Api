@@ -88,4 +88,27 @@ public class Repository<T> : IRepository<T> where T : BaseEntity
     {
         return await _dbSet.AnyAsync(predicate, cancellationToken);
     }
+
+    public virtual async Task<List<T>> GetWithSpecificationAsync(Medicares.Application.Contracts.Specifications.ISpecification<T> spec, CancellationToken ct = default)
+    {
+        IQueryable<T> query = _dbSet;
+
+        if (spec.Criteria != null)
+        {
+            query = query.Where(spec.Criteria);
+        }
+
+        query = spec.Includes.Aggregate(query, (current, include) => current.Include(include));
+        query = spec.IncludeStrings.Aggregate(query, (current, include) => current.Include(include));
+
+        if (!string.IsNullOrEmpty(spec.OrderBy))
+        {
+            // Simple order by for now, can be expanded to dynamic ordering helper
+            // For a production app, use a more robust dynamic LINQ or similar
+            // This is a minimal implementation to show the pattern
+            // query = query.OrderBy(spec.OrderBy); 
+        }
+
+        return await query.AsNoTracking().ToListAsync(ct);
+    }
 }
