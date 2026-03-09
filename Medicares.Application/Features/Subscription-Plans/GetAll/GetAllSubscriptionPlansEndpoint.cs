@@ -14,7 +14,8 @@ namespace Medicares.Application.Features.Subscription_Plans.GetAll
         {
             Get(SubscriptionPlanGroup.ApiRoutes.GetAll);
             Group<SubscriptionPlanGroup>();
-            Roles(RoleConsts.SuperAdmin);
+            AllowAnonymous();
+
             Summary(s =>
             {
                 s.Summary = "Get All Subscription Plans";
