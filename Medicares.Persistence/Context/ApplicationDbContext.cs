@@ -21,6 +21,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<Store> Stores { get; set; }
     public DbSet<StoreStaff> StoreStaffs { get; set; }
     public DbSet<RefreshToken> RefreshTokens { get; set; }
+    public DbSet<SubscriptionPlan> SubscriptionPlans { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

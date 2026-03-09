@@ -1,6 +1,6 @@
 ﻿namespace Medicares.Domain.Base
 {
-    public abstract class BaseAuditableEntity : BaseEntity, IAuditableEntity, IDeleteEntity, IOwnerEntity
+    public abstract class BaseAuditableEntity : BaseEntity, IAuditableEntity, IDeleteEntity
     {
         public DateTime CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
@@ -9,6 +9,5 @@
         public Guid? DeletedBy { get; set; }
         public Guid? CreatedBy { get; set; }
         public Guid? UpdatedBy { get; set; }
-        public Guid OwnerId { get; set; }
     }
 }
