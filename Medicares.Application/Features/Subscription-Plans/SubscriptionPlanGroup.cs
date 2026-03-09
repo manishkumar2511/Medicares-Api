@@ -20,6 +20,7 @@ namespace Medicares.Application.Features.Subscription_Plans
         public static class ApiRoutes
         {
             public const string Create = "create";
+            public const string GetAll = "get-all";
         }
 
         public static class SubscriptionPlanConsts
