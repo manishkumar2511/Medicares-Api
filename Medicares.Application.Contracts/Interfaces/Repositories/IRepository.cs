@@ -7,7 +7,7 @@ public interface IRepository<T> where T : BaseEntity
 {
     IQueryable<T> Entities { get; }
     IQueryable<T> FromSqlRaw(string sql, params object[] parameters);
-    Task<T?> GetByIdAsync(object id);
+    Task<T?> GetByIdAsync(object id, CancellationToken ct = default);
 
     Task<List<T>> GetAllAsync();
 
@@ -20,7 +20,7 @@ public interface IRepository<T> where T : BaseEntity
     Task UpdateColumnAsync(T entity, string[] ColumnNames);
     Task UpdateRangeAsync(IList<T> entities);
 
-    Task DeleteAsync(T entity);
+    Task DeleteAsync(T entity, CancellationToken ct = default);
     Task DeleteRangeAsync(IList<T> entities);
     Task<bool> EntityExistsAsync(Expression<Func<T, bool>> predicate, CancellationToken cancellationToken);
     Task<List<T>> GetWithSpecificationAsync(Specifications.ISpecification<T> spec, CancellationToken ct = default);
