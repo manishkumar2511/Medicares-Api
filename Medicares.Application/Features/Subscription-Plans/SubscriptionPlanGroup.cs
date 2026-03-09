@@ -21,18 +21,23 @@ namespace Medicares.Application.Features.Subscription_Plans
         {
             public const string Create = "create";
             public const string GetAll = "get-all";
+            public const string Delete = "delete/{Id}";
         }
 
         public static class SubscriptionPlanConsts
         {
             public const string CreateSummary = "Create Subscription Plan";
             public const string CreateDescription = "Endpoint to create a new subscription plan with name, price, and duration.";
+            public const string DeleteSummary = "Delete Subscription Plan";
+            public const string DeleteDescription = "Endpoint to delete an existing subscription plan by its unique identifier.";
         }
 
         public static class SubscriptionPlanMessages
         {
             public const string CreateSuccess = "Subscription plan created successfully";
             public const string CreateFailed = "Failed to create subscription plan";
+            public const string DeleteSuccess = "Subscription plan deleted successfully";
+            public const string DeleteFailed = "Failed to delete subscription plan";
         }
     }
 }

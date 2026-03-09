@@ -24,9 +24,9 @@ public class Repository<T> : IRepository<T> where T : BaseEntity
         return _dbSet.FromSqlRaw(sql, parameters);
     }
 
-    public virtual async Task<T?> GetByIdAsync(object id)
+    public virtual async Task<T?> GetByIdAsync(object id, CancellationToken ct = default)
     {
-        return await _dbSet.FindAsync(id);
+        return await _dbSet.FindAsync(new object[] { id }, ct);
     }
 
     public virtual async Task<T> AddAsync(T entity, CancellationToken ct = default)
@@ -72,7 +72,7 @@ public class Repository<T> : IRepository<T> where T : BaseEntity
         return Task.CompletedTask;
     }
 
-    public virtual Task DeleteAsync(T entity)
+    public virtual Task DeleteAsync(T entity, CancellationToken ct = default)
     {
         _dbSet.Remove(entity);
         return Task.CompletedTask;
