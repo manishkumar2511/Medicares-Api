@@ -29,8 +29,8 @@ namespace Medicares.Application.Contracts.Specifications
             if (Criteria == null)
                 return query;
 
-            var parameter = Expression.Parameter(typeof(T));
-            var body = Expression.AndAlso(
+            ParameterExpression parameter = Expression.Parameter(typeof(T));
+            BinaryExpression body = Expression.AndAlso(
                 Expression.Invoke(Criteria, parameter),
                 Expression.Invoke(query, parameter)
             );
@@ -42,8 +42,8 @@ namespace Medicares.Application.Contracts.Specifications
             if (Criteria == null)
                 return query;
 
-            var parameter = Expression.Parameter(typeof(T));
-            var body = Expression.OrElse(
+            ParameterExpression parameter = Expression.Parameter(typeof(T));
+            BinaryExpression body = Expression.OrElse(
                 Expression.Invoke(Criteria, parameter),
                 Expression.Invoke(query, parameter)
             );
