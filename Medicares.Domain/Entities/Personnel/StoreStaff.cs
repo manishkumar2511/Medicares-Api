@@ -2,7 +2,7 @@
 using Medicares.Domain.Entities.Auth;
 namespace Medicares.Domain.Entities.Personnel
 {
-    public class StoreStaff : BaseAuditableEntity
+    public class StoreStaff : BaseOwnerEntity
     {
         public Guid StoreId { get; set; }
         public Store Store { get; set; } = default!;

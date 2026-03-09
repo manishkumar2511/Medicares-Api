@@ -4,7 +4,7 @@ using Medicares.Domain.Entities.Common;
 
 namespace Medicares.Domain.Entities.Personnel
 {
-    public class Store : BaseAuditableEntity
+    public class Store : BaseOwnerEntity
     {
         public string Name { get; set; } = null!;
         public string Code { get; set; } = null!;

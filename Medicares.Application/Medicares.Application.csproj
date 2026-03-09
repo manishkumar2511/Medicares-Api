@@ -6,6 +6,13 @@
     
   </PropertyGroup>
 
+
+  <ItemGroup>
+    <Compile Remove="Features\Subcription-Plans\**" />
+    <EmbeddedResource Remove="Features\Subcription-Plans\**" />
+    <None Remove="Features\Subcription-Plans\**" />
+  </ItemGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\Medicares.Application.Contracts\Medicares.Application.Contracts.csproj" />
     <ProjectReference Include="..\Medicares.Domain.Shared\Medicares.Domain.Shared.csproj" />
