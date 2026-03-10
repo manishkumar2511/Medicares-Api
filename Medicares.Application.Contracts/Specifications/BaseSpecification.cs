@@ -8,6 +8,7 @@ namespace Medicares.Application.Contracts.Specifications
         public List<Expression<Func<T, object>>> Includes { get; } = new();
         public List<string> IncludeStrings { get; } = new();
         public string? OrderBy { get; protected set; }
+        public string? OrderByDescending { get; protected set; }
 
         protected BaseSpecification(Expression<Func<T, bool>>? criteria = null)
         {
