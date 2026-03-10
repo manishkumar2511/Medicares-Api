@@ -8,15 +8,15 @@ namespace Medicares.Application.Features.Dashboard.SuperAdmin.GetAllOwners
         {
             return owners.Select(x =>
             {
-                ApplicationUser? user = x.ApplicationUser.FirstOrDefault();
+                ApplicationUser? user = x.User;
                 return new GetAllOwnersResponse
                 {
                     Id = x.Id,
-                    FirstName = x.FirstName,
-                    LastName = x.LastName,
-                    Email = x.Email,
-                    Phone = x.Phone,
-                    IsActive = x.IsActive,
+                    FirstName = user?.FirstName ?? string.Empty,
+                    LastName = user?.LastName ?? string.Empty,
+                    Email = user?.Email ?? string.Empty,
+                    Phone = user?.PhoneNumber ?? string.Empty,
+                    IsActive = user?.IsActive ?? false,
                     CreatedAt = x.CreatedAt,
                     LastLoginAt = user?.LastLoginAt,
                     Address = user?.Address?.AddressLine,

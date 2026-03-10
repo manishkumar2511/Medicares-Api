@@ -7,8 +7,8 @@ namespace Medicares.Application.Features.Dashboard.SuperAdmin.GetAllOwners
     {
         public GetAllOwnersSpecification()
         {
-            AddInclude(x => x.ApplicationUser);
-            AddInclude("ApplicationUser.Address.State");
+            AddInclude(x => x.User);
+            AddInclude("User.Address.State");
             OrderByDescending = "CreatedAt";
         }
     }
