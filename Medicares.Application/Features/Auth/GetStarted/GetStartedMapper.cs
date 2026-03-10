@@ -7,15 +7,11 @@ namespace Medicares.Application.Features.Auth.GetStarted;
 
 public static class GetStartedMapper
 {
-    public static Owner MapToOwner(this GetStartedRequest request)
+    public static Owner MapToOwner(this GetStartedRequest request, Guid userId)
     {
         return new Owner
         {
-            FirstName = request.FirstName,
-            LastName = request.LastName,
-            Email = request.Email,
-            Phone = request.PhoneNumber,
-            IsActive = true,
+            UserId = userId,
             IsSubscriptionActive = false,
             SubscriptionStartDate = null,
             SubscriptionEndDate = null
@@ -34,7 +30,7 @@ public static class GetStartedMapper
         };
     }
 
-    public static UserDto MapToUserDto(this GetStartedRequest request, Guid ownerId)
+    public static UserDto MapToUserDto(this GetStartedRequest request, Guid? ownerId = null)
     {
         return new UserDto
         {

@@ -63,6 +63,8 @@ public static class DatabaseInitializer
         }
     }
 
+
+
     private static async Task SeedSuperAdminAsync(
     ApplicationDbContext db,
     UserManager<ApplicationUser> userManager,
@@ -72,11 +74,8 @@ public static class DatabaseInitializer
         string superEmail = credential.SuperAdmin;
         string superPass = credential.Password;
 
-        ApplicationUser? super = await userManager.FindByEmailAsync(superEmail);
-        if (super != null) return;
-
-        // Ensure platform owner exists
-        Owner? platformOwner = await GetOrCreatePlatformOwnerAsync(db, ct);
+        ApplicationUser? existingUser = await userManager.FindByEmailAsync(superEmail);
+        if (existingUser != null) return;
 
         State? state = await db.Set<State>().FirstOrDefaultAsync(ct);
         Address address = new()
@@ -88,23 +87,24 @@ public static class DatabaseInitializer
             StateId = state?.Id ?? Guid.Empty,
             Country = "India"
         };
-        super = new ApplicationUser
+
+        ApplicationUser superAdmin = new()
         {
             UserName = superEmail,
             Email = superEmail,
             FirstName = "Manish",
             LastName = "SuperAdmin",
-            OwnerId = platformOwner.Id,
             IsActive = true,
             CreatedAt = DateTime.UtcNow,
             EmailConfirmed = true,
             Address = address
+            // OwnerId = null for SuperAdmin (no tenant)
         };
 
-        IdentityResult result = await userManager.CreateAsync(super, superPass);
+        IdentityResult result = await userManager.CreateAsync(superAdmin, superPass);
         if (result.Succeeded)
         {
-            await userManager.AddToRolesAsync(super, [RoleConsts.SuperAdmin]);
+            await userManager.AddToRolesAsync(superAdmin, [RoleConsts.SuperAdmin]);
         }
     }
 
@@ -117,11 +117,8 @@ public static class DatabaseInitializer
         string adminEmail = credential.Admin;
         string adminPass = credential.Password;
 
-        ApplicationUser? admin = await userManager.FindByEmailAsync(adminEmail);
-        if (admin != null) return;
-
-        // Ensure platform owner exists
-        Owner? platformOwner = await GetOrCreatePlatformOwnerAsync(db, ct);
+        ApplicationUser? existing = await userManager.FindByEmailAsync(adminEmail);
+        if (existing != null) return;
 
         State? state = await db.Set<State>().FirstOrDefaultAsync(ct);
         Address address = new()
@@ -133,13 +130,13 @@ public static class DatabaseInitializer
             StateId = state?.Id ?? Guid.Empty,
             Country = "India"
         };
-        admin = new ApplicationUser
+
+        ApplicationUser admin = new()
         {
             UserName = adminEmail,
             Email = adminEmail,
             FirstName = "Manish",
             LastName = "Admin",
-            OwnerId = platformOwner.Id,
             IsActive = true,
             CreatedAt = DateTime.UtcNow,
             EmailConfirmed = true,
@@ -150,6 +147,23 @@ public static class DatabaseInitializer
         if (result.Succeeded)
         {
             await userManager.AddToRolesAsync(admin, [RoleConsts.Admin]);
+
+            // Create Owner record linked to this admin user
+            Owner owner = new()
+            {
+                Id = Guid.Parse(ApplicationConsts.PlatformOwnerId),
+                UserId = admin.Id,
+                IsSubscriptionActive = true,
+                SubscriptionStartDate = DateTime.UtcNow,
+                SubscriptionEndDate = DateTime.UtcNow.AddYears(1)
+            };
+            await db.Owners.AddAsync(owner, ct);
+
+            // Link admin user back to Owner for tenant scoping
+            admin.OwnerId = owner.Id;
+            await userManager.UpdateAsync(admin);
+
+            await db.SaveChangesAsync(ct);
         }
     }
 
@@ -191,30 +205,5 @@ public static class DatabaseInitializer
 
         await db.Set<State>().AddRangeAsync(states, ct);
         await db.SaveChangesAsync(ct);
-    }
-
-    private static async Task<Owner> GetOrCreatePlatformOwnerAsync(ApplicationDbContext db, CancellationToken ct)
-    {
-        Guid ownerId = Guid.Parse(ApplicationConsts.PlatformOwnerId);
-
-        Owner? owner = await db.Owners.FirstOrDefaultAsync(o => o.Id == ownerId, ct);
-
-        if (owner != null)
-            return owner;
-
-        owner = new Owner
-        {
-            Id = ownerId,
-            IsActive = true,
-            FirstName = "Platform",
-            LastName = "Admin",
-            Email = "yadavmanishk2511@gmail.com",
-            Phone = "0000000000",
-        };
-
-        await db.Owners.AddAsync(owner, ct);
-        await db.SaveChangesAsync(ct);
-
-        return owner;
     }
 }

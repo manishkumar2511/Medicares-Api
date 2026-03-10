@@ -57,7 +57,7 @@ public class IdentityService : IIdentityService
     {
         ApplicationUser? user = await _userManager.Users
             .IgnoreQueryFilters()
-            .FirstOrDefaultAsync(u => u.Email == email, ct);
+            .FirstOrDefaultAsync(u => u.NormalizedEmail == email.ToUpperInvariant(), ct);
 
         if (user == null)
             return new LoginResult { Error = "User not found" };
@@ -117,7 +117,7 @@ public class IdentityService : IIdentityService
     {
         ApplicationUser? user = await _userManager.Users
             .IgnoreQueryFilters()
-            .FirstOrDefaultAsync(u => u.Email == email, ct);
+            .FirstOrDefaultAsync(u => u.NormalizedEmail == email.ToUpperInvariant(), ct);
         if (user == null)
 
             return (false, "User not found");
@@ -135,7 +135,7 @@ public class IdentityService : IIdentityService
     {
         ApplicationUser? user = await _userManager.Users
             .IgnoreQueryFilters()
-            .FirstOrDefaultAsync(u => u.Email == email, ct);
+            .FirstOrDefaultAsync(u => u.NormalizedEmail == email.ToUpperInvariant(), ct);
 
         if (user == null)
             return new LoginResult { Error = "User not found" };
@@ -231,7 +231,7 @@ public class IdentityService : IIdentityService
             FirstName = userRequest.FirstName,
             LastName = userRequest.LastName,
             PhoneNumber = userRequest.PhoneNumber,
-            OwnerId = userRequest.OwnerId.GetValueOrDefault(), 
+            OwnerId = (userRequest.OwnerId != null && userRequest.OwnerId != Guid.Empty) ? userRequest.OwnerId : null, 
             IsActive = true,
             EmailConfirmed = true,
             TwoFactorEnabled = true,
@@ -273,22 +273,24 @@ public class IdentityService : IIdentityService
 
     public async Task<(bool Success, string? Error)> DeactivateOwnerAsync(Guid ownerId, CancellationToken ct = default)
     {
-        Owner? owner = await _dbContext.Owners.FindAsync([ownerId], ct);
+        Owner? owner = await _dbContext.Owners
+            .Include(o => o.User)
+            .FirstOrDefaultAsync(o => o.Id == ownerId, ct);
         if (owner == null) return (false, "Owner not found");
 
-        owner.IsActive = false;
-        owner.DeactivatedAt = DateTime.UtcNow;
+        owner.User.IsActive = false;
         await _dbContext.SaveChangesAsync(ct);
         return (true, null);
     }
 
     public async Task<(bool Success, string? Error)> ActivateOwnerAsync(Guid ownerId, CancellationToken ct = default)
     {
-        Owner? owner = await _dbContext.Owners.FindAsync([ownerId], ct);
+        Owner? owner = await _dbContext.Owners
+            .Include(o => o.User)
+            .FirstOrDefaultAsync(o => o.Id == ownerId, ct);
         if (owner == null) return (false, "Owner not found");
 
-        owner.IsActive = true;
-        owner.DeactivatedAt = null;
+        owner.User.IsActive = true;
         await _dbContext.SaveChangesAsync(ct);
         return (true, null);
     }

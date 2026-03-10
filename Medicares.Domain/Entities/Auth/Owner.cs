@@ -5,20 +5,14 @@ namespace Medicares.Domain.Entities.Auth
 {
     public class Owner : BaseAuditableEntity
     {
-        public string FirstName { get; set; } = null!;
-        public string LastName { get; set; } = null!;
-        public string Email { get; set; } = null!;
-        public string Phone { get; set; } = null!;
-        public string? LogoUrl { get; set; }
-        public bool IsActive { get; set; } = true;
-        public DateTime? DeactivatedAt { get; set; }
+        public Guid UserId { get; set; }
 
         public bool IsSubscriptionActive { get; set; }
         public DateTime? SubscriptionStartDate { get; set; }
         public DateTime? SubscriptionEndDate { get; set; }
 
+        public ApplicationUser User { get; set; } = null!;
         public ICollection<Store> Stores { get; set; } = new List<Store>();
-        public ICollection<ApplicationUser> ApplicationUser { get; set; } = new List<ApplicationUser>();
-
     }
 }
+

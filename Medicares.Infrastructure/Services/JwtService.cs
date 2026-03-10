@@ -15,7 +15,7 @@ namespace Medicares.Infrastructure.Services;
 
 public class JwtService(ApplicationDbContext db, IOptions<JwtSettings> jwtSettings) : IJwtService
 {
-    public JwtTokenResult GenerateAccessToken(ApplicationUser user, string email, string role, Guid ownerId, Guid userRoleId)
+    public JwtTokenResult GenerateAccessToken(ApplicationUser user, string email, string role, Guid? ownerId, Guid userRoleId)
     {
         JwtSecurityTokenHandler tokenHandler = new();
         byte[] key = Encoding.ASCII.GetBytes(jwtSettings.Value.Secret ??
@@ -26,7 +26,7 @@ public class JwtService(ApplicationDbContext db, IOptions<JwtSettings> jwtSettin
             new(ClaimTypes.NameIdentifier, user.Id.ToString()),
             new(ClaimTypes.Email, email),
             new(ClaimTypes.Role, role),
-            new("ownerId", ownerId.ToString()), 
+            new("ownerId", ownerId?.ToString() ?? string.Empty),
             new("roleId", userRoleId.ToString()),
             new("jti", Guid.NewGuid().ToString()), 
             new("userProfileImage", user.ProfilePictureUrl ?? String.Empty)
@@ -55,7 +55,7 @@ public class JwtService(ApplicationDbContext db, IOptions<JwtSettings> jwtSettin
         };
     }
 
-    public RefreshToken GenerateRefreshToken(Guid userId, Guid ownerId)
+    public RefreshToken GenerateRefreshToken(Guid userId, Guid? ownerId)
     {
         byte[] randomNumber = new byte[32];
         using RandomNumberGenerator rng = RandomNumberGenerator.Create();
@@ -65,7 +65,7 @@ public class JwtService(ApplicationDbContext db, IOptions<JwtSettings> jwtSettin
         {
             Id = Guid.NewGuid(),
             UserId = userId,
-            OwnerId = ownerId, // Changed from TenantId to OwnerId
+            OwnerId = ownerId ?? Guid.Empty,
             Token = Convert.ToBase64String(randomNumber),
             CreatedAt = DateTime.UtcNow,
             ExpiresAt = DateTime.UtcNow.AddDays(14)
