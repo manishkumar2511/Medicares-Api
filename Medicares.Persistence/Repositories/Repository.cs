@@ -3,6 +3,7 @@ using Medicares.Application.Contracts.Interfaces.Repositories;
 using Medicares.Persistence.Context;
 using Microsoft.EntityFrameworkCore;
 using Medicares.Domain.Base;
+using System.Linq.Dynamic.Core;
 
 namespace Medicares.Persistence.Repositories;
 
@@ -91,24 +92,33 @@ public class Repository<T> : IRepository<T> where T : BaseEntity
 
     public virtual async Task<List<T>> GetWithSpecificationAsync(Medicares.Application.Contracts.Specifications.ISpecification<T> spec, CancellationToken ct = default)
     {
-        IQueryable<T> query = _dbSet;
+        IQueryable<T> queryable = _dbSet.AsQueryable();
 
-        if (spec.Criteria != null)
+        if (spec.Includes.Any())
         {
-            query = query.Where(spec.Criteria);
+            queryable = spec.Includes.Aggregate(queryable, (current, include) => current.Include(include));
         }
 
-        query = spec.Includes.Aggregate(query, (current, include) => current.Include(include));
-        query = spec.IncludeStrings.Aggregate(query, (current, include) => current.Include(include));
+        if (spec.IncludeStrings.Any())
+        {
+            queryable = spec.IncludeStrings.Aggregate(queryable, (current, include) => current.Include(include));
+        }
 
         if (!string.IsNullOrEmpty(spec.OrderBy))
         {
-            // Simple order by for now, can be expanded to dynamic ordering helper
-            // For a production app, use a more robust dynamic LINQ or similar
-            // This is a minimal implementation to show the pattern
-            // query = query.OrderBy(spec.OrderBy); 
+            queryable = queryable.OrderBy(spec.OrderBy);
         }
 
-        return await query.AsNoTracking().ToListAsync(ct);
+        if (!string.IsNullOrEmpty(spec.OrderByDescending))
+        {
+            queryable = queryable.OrderBy(spec.OrderByDescending + " descending");
+        }
+
+        if (spec.Criteria != null)
+        {
+            queryable = queryable.Where(spec.Criteria);
+        }
+
+        return await queryable.AsNoTracking().ToListAsync(ct);
     }
 }

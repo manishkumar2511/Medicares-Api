@@ -51,6 +51,11 @@ public static class QueryableExtensions
             queryable = queryable.OrderBy(spec.OrderBy);
         }
 
+        if (!string.IsNullOrEmpty(spec.OrderByDescending))
+        {
+            queryable = queryable.OrderBy(spec.OrderByDescending + " descending");
+        }
+
         // Apply filter criteria
         if (spec.Criteria != null)
         {

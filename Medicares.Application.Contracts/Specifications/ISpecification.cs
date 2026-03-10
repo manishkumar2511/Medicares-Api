@@ -13,6 +13,7 @@ namespace Medicares.Application.Contracts.Specifications
         List<Expression<Func<T, object>>> Includes { get; }
         List<string> IncludeStrings { get; }
         string? OrderBy { get; }
+        string? OrderByDescending { get; }
 
         void AddInclude(string includeString);
         Expression<Func<T, bool>> And(Expression<Func<T, bool>> query);
