@@ -16,6 +16,7 @@ namespace Medicares.Domain.Entities.Personnel
         public Address Address { get; set; } = default!;
 
         public bool IsActive { get; set; } = true;
+        public string? LogoUrl { get; set; }
 
         public Owner Owner { get; set; } = default!;
         public ICollection<StoreStaff> StoreStaffs { get; set; } = new List<StoreStaff>();

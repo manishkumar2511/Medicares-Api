@@ -27,7 +27,7 @@ public class GetStartedEndpoint(IIdentityService identityService, IUnitOfWork un
 
     public override async Task HandleAsync(GetStartedRequest req, CancellationToken ct)
     {
-        ApplicationUser? existingUser = await identityService.Users.FirstOrDefaultAsync(u => u.Email == req.Email, ct);
+        ApplicationUser? existingUser = await identityService.Users.FirstOrDefaultAsync(u => u.NormalizedEmail == req.Email.ToUpperInvariant(), ct);
         if (existingUser is not null)
         {
             await SendOkAsync(await Result<bool>.FailAsync(AuthGroup.AuthMessages.OwnerEmailAlreadyExists), ct);
@@ -39,17 +39,19 @@ public class GetStartedEndpoint(IIdentityService identityService, IUnitOfWork un
             await unitOfWork.ExecuteTransactionAsync(async () =>
             {
                 Address address = req.MapToAddress();
-                Owner owner = req.MapToOwner();
-
                 await unitOfWork.Repository<Address>().AddAsync(address, ct);
 
+                UserDto userDto = req.MapToUserDto();
+                (ApplicationUser? user, string? userError) = await identityService.CreateUserAsync(userDto, req.Password, address.Id, ct);
+                if (user == null) throw new Exception(userError ?? AuthGroup.AuthMessages.RegistrationFailed);
+
+                Owner owner = req.MapToOwner(user.Id);
                 (Owner? createdOwner, string? ownerError) = await identityService.CreateOwnerAsync(owner, ct);
                 if (createdOwner == null) throw new Exception(ownerError ?? AuthGroup.AuthMessages.RegistrationFailed);
 
-                UserDto userDto = req.MapToUserDto(createdOwner.Id);
-                (ApplicationUser? user, string? userError) = await identityService.CreateUserAsync(userDto, req.Password, address.Id, ct);
+                user.OwnerId = createdOwner.Id;
+                await identityService.UpdateUserProfile(user, ct);
 
-                if (user == null) throw new Exception(userError ?? AuthGroup.AuthMessages.RegistrationFailed);
             }, ct);
 
             await emailService.SendWelcomeEmailAsync(req.Email, $"{req.FirstName} {req.LastName}", ct);

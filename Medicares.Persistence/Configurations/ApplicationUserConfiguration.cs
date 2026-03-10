@@ -8,7 +8,7 @@ public class ApplicationUserConfiguration : IEntityTypeConfiguration<Application
 {
     public void Configure(EntityTypeBuilder<ApplicationUser> builder)
     {
-        // Enforce column order to ensure OwnerId is last
+        // Column ordering
         builder.Property(u => u.Id).HasColumnOrder(1);
         builder.Property(u => u.FirstName).HasColumnOrder(2);
         builder.Property(u => u.LastName).HasColumnOrder(3);
@@ -31,7 +31,12 @@ public class ApplicationUserConfiguration : IEntityTypeConfiguration<Application
         builder.Property(u => u.LockoutEnd).HasColumnOrder(20);
         builder.Property(u => u.LockoutEnabled).HasColumnOrder(21);
         builder.Property(u => u.AccessFailedCount).HasColumnOrder(22);
-        
         builder.Property(u => u.OwnerId).HasColumnOrder(23);
+
+        builder.HasOne(u => u.Owner)
+               .WithMany()
+               .HasForeignKey(u => u.OwnerId)
+               .IsRequired(false)
+               .OnDelete(DeleteBehavior.Restrict);
     }
 }

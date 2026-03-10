@@ -12,8 +12,10 @@ namespace Medicares.Domain.Entities.Auth
         public DateTime? LastLoginAt { get; set; }
         public string? ProfilePictureUrl { get; set; }
         public Guid? AddressId { get; set; }
-        public Guid OwnerId { get; set; }
+        public Guid? OwnerId { get; set; }
+
         public Address? Address { get; set; }
         public Owner? Owner { get; set; }
     }
 }
+

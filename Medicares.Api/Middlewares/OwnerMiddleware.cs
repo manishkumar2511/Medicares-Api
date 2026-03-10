@@ -35,8 +35,12 @@ public class OwnerMiddleware
 
         if (resolvedOwnerId != null)
         {
-            Owner? owner = await db.Owners.IgnoreQueryFilters().FirstOrDefaultAsync(t => t.Id == resolvedOwnerId);
-            if (owner != null && !owner.IsActive)
+            Owner? owner = await db.Owners
+                .Include(o => o.User)
+                .IgnoreQueryFilters()
+                .FirstOrDefaultAsync(o => o.Id == resolvedOwnerId);
+
+            if (owner != null && !owner.User.IsActive)
             {
                 ctx.Response.StatusCode = StatusCodes.Status403Forbidden;
                 await ctx.Response.WriteAsync("Owner is inactive.");
